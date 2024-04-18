@@ -1,0 +1,24 @@
+#T0=2024-05-18T17:55:37.211000Z
+#Антонов-225 Мрия
+dx/dt = (6 * Ft * cos(alpha) * cos(gamma) - Cy * rho * 905 * (dx + V_wind)^2 * sin(alpha - alpha1) * sin(beta) * cos(gamma) - Cy * rho * 905 * (dx + V_wind)^2 * sin(alpha - alpha2) * sin(beta) * cos(gamma) - 0.5 * cos(gamma) * cos(alpha) * rho * S_section * CC * (dx + V_wind)^2) / (6 * m + M)
+dy/dt = (Cy * rho * 905 * (dx + V_wind)^2 * cos(alpha - alpha1) * sin(beta) + 6 * Ft * sin(alpha) + 2 * Cy * rho * 905 * (dx + V_wind)^2 * cos(alpha - alpha2) * sin(beta) - (6*m+M)*g - cos(gamma) * sin(alpha) * rho * S_section * CC * (dx + V_wind)^2) / (6 * m + M)
+dz/dt = (6 * Ft * cos(alpha) * sin(gamma) + Cy * rho * 905 * (dx + V_wind)^2 * cos(alpha - alpha1) * sin(beta) * sin(gamma) + Cy * rho * 905 * (dx + V_wind)^2 * cos(alpha - alpha2) * sin(beta) * sin(gamma) - sin(gamma) * sin(alpha) * rho * S_section * CC * (dx + V_wind)^2) / (6 * m + M)
+d(alpha)/dt = (rho * S_section * CC * (dx + V_wind)^2 * cos(alpha-alpha1) * sin(beta) - 2 * rho * S_section * CC * (dx + V_wind) * cos(alpha-alpha2) * sin(beta) * d / 2) / (M * (B^2 + C^2)) / 5
+d(beta)/dt = (rho * S_section * CC * (dx + V_wind)^2 * sin(alpha - alpha1) * sin(beta) * cos(gamma) - rho * S_section * CC * (dx + V_wind)^2 * sin(alpha - alpha2) * sin(beta) * cos(gamma) * d / 2) / (M * (A^2 + B^2)) / 5
+d(gamma)/dt = (rho * S_section * CC * (dx + V_wind)^2 * cos(alpha - alpha1) * sin(beta) * sin(gamma) - rho * S_section * CC * (dx + V_wind)^2 * cos(alpha - alpha2) * sin(beta) * sin(gamma) * d / 2) / (M * (A^2 + B^2)) / 5
+#Параметры
+Ft = 10000
+V_wind = 200
+alpha1 = 0
+alpha2 = 0
+S_section = 10
+rho = 0.414
+m = 4100
+M = 640000
+Cy = 0.432
+A = 35
+B = 6
+C = 4
+d = 88.4
+CC = 0.139
+S = 100

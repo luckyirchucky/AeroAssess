@@ -8,9 +8,20 @@ import com.luckyirchucky.service.watchservice.DirectoryPreferences;
 import com.luckyirchucky.service.watchservice.WatchCallable;
 import com.luckyirchucky.ui.inputdata.EKF.EKFInputDataWindow;
 import com.luckyirchucky.ui.loadfile.LoadFileWindow;
+import com.luckyirchucky.ui.loadfile.LoadResultFileWindow;
 import com.luckyirchucky.ui.outputdata.reference.ReferenceOutputDataWindow;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
+import org.apache.commons.math3.ode.FirstOrderIntegrator;
+import org.apache.commons.math3.ode.nonstiff.ClassicalRungeKuttaIntegrator;
+import org.apache.commons.math3.ode.sampling.FixedStepHandler;
+import org.apache.commons.math3.ode.sampling.StepNormalizer;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -51,8 +62,6 @@ public class MainWindow extends JFrame implements IMainWindow {
     private JMenuItem menuWorkItemEKF;
     private JMenuItem menuWorkItemParticleFilter;
 
-    @Getter
-    private static ResultSolution bufferResult = new ResultSolution();
     private Font font = new Font("System", Font.PLAIN, 12);
     private static File rootPath = new File(System.getProperty("user.home"));
     private static FileSystemView fileSystemView = new SingleRootFileSystemView(rootPath);
@@ -76,6 +85,21 @@ public class MainWindow extends JFrame implements IMainWindow {
             return dialog;
         }
     };
+
+    private static final double T0 = 0;
+    private static final double T_FINAL = 1000;
+    private static final double INIT_X = 0;
+    private static final double INIT_Y = 0;
+    private static final double INIT_Z = 10000;
+    private static final double INIT_ALPHA = 0;
+    private static final double INIT_BETA = 0;
+    private static final double INIT_GAMMA = 0;
+    private static final double DT = 0.01;
+    @Getter
+    private static ChartPanel chartPanelX;
+    @Getter
+    private static ChartPanel chartPanelY;
+    private JPanel resultPanel;
 
     public MainWindow() {
         super("");
@@ -123,7 +147,92 @@ public class MainWindow extends JFrame implements IMainWindow {
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         initializeMenu();
         initializeMainWindow();
-        MainWindow window = this;
+        initializeChartPanels();
+        initializeMainWindow();
+    }
+
+    private void initializeChartPanels() {
+        JFreeChart chartX = createChartX();
+        JFreeChart chartY = createChartY();
+
+        chartPanelX = new ChartPanel(chartX);
+        chartPanelY = new ChartPanel(chartY);
+
+        JPanel contentPane = new JPanel(new GridLayout(2, 1));
+        contentPane.add(chartPanelX);
+        contentPane.add(chartPanelY);
+
+        setContentPane(contentPane);
+    }
+
+    private void plotFlightTrajectory() {
+        // Define the system of differential equations
+        FirstOrderDifferentialEquations ode = new MyDifferentialEquations();
+
+        // Create the integrator
+        FirstOrderIntegrator integrator = new ClassicalRungeKuttaIntegrator(DT);
+
+        // Set up step handler to collect data points during integration
+        FixedStepHandler stepHandler = new MyStepHandler();
+        StepNormalizer stepNormalizer = new StepNormalizer(DT, stepHandler);
+        stepNormalizer.init(T0, new double[]{INIT_X, INIT_Y, INIT_Z, INIT_ALPHA, INIT_BETA, INIT_GAMMA}, T_FINAL);
+
+        // Perform integration
+        try {
+            integrator.addStepHandler(stepNormalizer);
+            integrator.integrate(ode, T0, new double[]{INIT_X, INIT_Y, INIT_Z, INIT_ALPHA, INIT_BETA, INIT_GAMMA}, T_FINAL, new double[6]);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private JFreeChart createChartX() {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        plotStraightLineOnXAxis(dataset);
+        JFreeChart chart = ChartFactory.createLineChart(
+                "Траектория движения по оси Х",
+                "t",
+                "X",
+                dataset,
+                PlotOrientation.VERTICAL,
+                false,
+                true,
+                false
+        );
+        return chart;
+    }
+
+    private JFreeChart createChartY() {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        plotStraightLineOnYAxis(dataset);
+        JFreeChart chart = ChartFactory.createLineChart(
+                "Траектория движения по оси Y",
+                "t",
+                "Y",
+                dataset,
+                PlotOrientation.VERTICAL,
+                false,
+                true,
+                false
+        );
+        return chart;
+    }
+
+    private void plotStraightLineOnYAxis(DefaultCategoryDataset dataset) {
+        dataset.addValue(10000, "Y", "0");
+        dataset.addValue(10000, "Y", "1000");
+    }
+
+    private void plotStraightLineOnXAxis(DefaultCategoryDataset dataset) {
+        // Задаем начальную позицию и шаг
+        double x = 0;
+        double step = 0.1; // Шаг между точками
+
+        // Добавляем точки, образующие экспоненциальную кривую
+        for (int i = 0; i < 100; i++) {
+            dataset.addValue(Math.exp(x), "X", String.valueOf(i));
+            x += step;
+        }
     }
 
     private void initializeMenu() {
@@ -171,13 +280,13 @@ public class MainWindow extends JFrame implements IMainWindow {
         menuUploadResultSolution.setFont(font);
         menuResult.add(menuUploadResultSolution);
         menuUploadResultSolution.addActionListener(e -> {
-            uploadResultSolutionFromFile();
+            new LoadResultFileWindow(this, openSavedFileChooser);
         });
 
         JMenuItem menuResultItemToFile = new JMenuItem("Сохранить");
         menuResultItemToFile.setFont(font);
         menuResult.add(menuResultItemToFile);
-        //menuResultItemToFile.addActionListener(e -> FileJSON.saveResultSolutionToFileAsJson());
+        menuResultItemToFile.addActionListener(e -> FileJSON.saveResultSolutionToFileAsJson());
 
         JMenuItem aboutItem = new JMenuItem("О программе...");
         aboutItem.setFont(font);
@@ -201,10 +310,6 @@ public class MainWindow extends JFrame implements IMainWindow {
         return CAPTION + " - " + fileName;
     }
 
-    public ResultSolution getResultSolution() {
-        return bufferResult;
-    }
-
     private void initializeMainWindow() {
         this.setSize(1200, 600);
         this.setVisible(true);
@@ -218,25 +323,5 @@ public class MainWindow extends JFrame implements IMainWindow {
 
         JPanel panelWithPaddingForEditButtonsPanel = new JPanel(new BorderLayout());
         panelWithPaddingForEditButtonsPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-    }
-
-    private void uploadResultSolutionFromFile() {
-        // Восстановление последнего пути к файлу
-        String location = DirectoryPreferences.FileLocation.get(System.getProperty("user.home"));
-        openSavedFileChooser.setCurrentDirectory(new File(location));
-
-        openSavedFileChooser.setVisible(true);
-        int response = openSavedFileChooser.showOpenDialog(this);
-        if (response == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = openSavedFileChooser.getSelectedFile();
-            String selectedFileName = selectedFile.getName();
-            if (!selectedFileName.toLowerCase().endsWith(".json")) {
-                selectedFile = new File(selectedFile.getAbsolutePath() + ".json");
-            }
-            MainWindow.setFilePath(selectedFile.getParent());
-            resultSolution = JSON_DATA_READER.read(selectedFile);
-            file = selectedFile;
-            DirectoryPreferences.FileLocation.put(openSavedFileChooser.getCurrentDirectory().getAbsolutePath());
-        }
     }
 }

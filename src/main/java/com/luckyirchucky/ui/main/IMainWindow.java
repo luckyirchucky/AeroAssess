@@ -11,13 +11,6 @@ import java.io.File;
 public interface IMainWindow {
 
     /**
-     * Получить результат решения
-     *
-     * @return - результат решения (по всем задачам)
-     */
-    ResultSolution getResultSolution();
-
-    /**
      * Запомнить файл с исследуемым параметром
      *
      * @param file
