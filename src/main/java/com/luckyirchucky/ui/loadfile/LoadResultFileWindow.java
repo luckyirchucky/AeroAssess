@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.List;
 
 import static com.luckyirchucky.service.localization.LocalizeUIJFileChooser.setUpdateUIJFileChooser;
+import static com.luckyirchucky.ui.main.MainWindow.*;
 
 /**
  * Окно отображения загруженных данных
@@ -158,6 +159,8 @@ public class LoadResultFileWindow extends JDialog {
             textAreaFileContent.setText(String.join("\n", dataFromFile));
             textAreaFileContent.setCaretPosition(0);
             DirectoryPreferences.FileLocation.put(MainWindow.getOpenSavedFileChooser().getCurrentDirectory().getAbsolutePath());
+            setResultSolution(getJSON_DATA_READER().read(selectedFile));
+
         } else {
             isFileOpened = false;
             DirectoryPreferences.FileLocation.put(MainWindow.getOpenSavedFileChooser().getCurrentDirectory().getAbsolutePath());

@@ -153,6 +153,7 @@ public class LoadFileWindow extends JDialog {
             MainWindow.setFileName(selectedFile.getName());
             filePath.setText(selectedFile.getAbsolutePath());
             dataFromFile = txtDataLoader.loadData(selectedFile.getAbsoluteFile());
+            MainWindow.setEKFInputParamsFromFile(dataFromFile.toString());
             textAreaFileContent.setEditable(false);
             textAreaFileContent.setText(String.join("\n", dataFromFile));
             textAreaFileContent.setCaretPosition(0);
